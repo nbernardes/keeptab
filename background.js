@@ -73,6 +73,27 @@ function shouldIntercept(details, prevUrl, settings) {
   return true;
 }
 
+// ---- rate limiting ------------------------------------------------------------
+// Stops runaway loops: a pinned page that keeps navigating itself by script
+// would otherwise open endless tabs, and something that keeps closing a pin
+// (another extension, a policy) would fight with us forever.
+
+const LIMIT = 3;
+const WINDOW_MS = 10_000;
+const hits = new Map();
+
+function allow(key) {
+  const now = Date.now();
+  const recent = (hits.get(key) || []).filter((t) => now - t < WINDOW_MS);
+  if (recent.length >= LIMIT) {
+    hits.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  hits.set(key, recent);
+  return true;
+}
+
 // ---- fallback: pinned tab committed a new page ------------------------------
 
 chrome.webNavigation.onCommitted.addListener(async (details) => {
@@ -90,6 +111,7 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
 
   const settings = await getSettings();
   if (!settings.enabled || !shouldIntercept(details, prevUrl, settings)) return;
+  if (!allow(`nav:${tabId}`)) return; // looping page: leave it in the pin
 
   await chrome.tabs.create({
     url: details.url,
@@ -184,6 +206,7 @@ async function reopenPin(rec) {
 
 chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   chrome.storage.session.remove([lastKey(tabId), restoreKey(tabId)]);
+  hits.delete(`nav:${tabId}`);
 
   const pins = await loadPins();
   const rec = pins[tabId];
@@ -195,6 +218,8 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
   if (removeInfo.isWindowClosing) return;
   const { preventClose } = await getSettings();
   if (!preventClose) return;
+  // Tab ids change on every reopen, so key the limit by URL.
+  if (!allow(`reopen:${rec.windowId}:${rec.url}`)) return;
 
   restoreQueue = restoreQueue.then(() => reopenPin(rec)).catch(() => {});
 });

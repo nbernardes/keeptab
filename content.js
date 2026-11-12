@@ -67,6 +67,18 @@
     setTimeout(() => (had ? el.setAttribute(attr, old) : el.removeAttribute(attr)), 0);
   }
 
+  // Open in a new tab without giving the new page a `window.opener` handle back
+  // to the pinned tab. Otherwise the new page could secretly send the pin to a
+  // different URL (reverse tabnabbing). Plain same-tab navigation never had
+  // that risk, so we must not add it.
+  function openInNewTab(el, targetAttr) {
+    setTemporarily(el, targetAttr, "_blank");
+    const relEl = el instanceof HTMLButtonElement || el instanceof HTMLInputElement ? el.form : el;
+    if (!relEl) return;
+    const rel = relEl.getAttribute("rel") || "";
+    if (!/\bnoopener\b/i.test(rel)) setTemporarily(relEl, "rel", `${rel} noopener`.trim());
+  }
+
   // Run `fn` at the very end of event dispatch: a capture listener on window
   // appends a bubble listener on window, which therefore runs after every
   // other handler on the page.
@@ -104,7 +116,7 @@
     if (!isSelfTarget(a.getAttribute("target") ?? baseTarget())) return; // already opens elsewhere
     if (!isLeaving(a.href)) return;
 
-    setTemporarily(a, "target", "_blank");
+    openInNewTab(a, "target");
   });
 
   // ---- forms ----------------------------------------------------------------
@@ -141,7 +153,7 @@
       method === "get" ? isLeaving(dest) : settings.scope === "all" || isLeaving(action);
     if (!leaving) return;
 
-    if (submitter?.hasAttribute("formtarget")) setTemporarily(submitter, "formtarget", "_blank");
-    else setTemporarily(form, "target", "_blank");
+    if (submitter?.hasAttribute("formtarget")) openInNewTab(submitter, "formtarget");
+    else openInNewTab(form, "target");
   });
 })();
