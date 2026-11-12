@@ -17,7 +17,8 @@
     "sessions"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://*/*",
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background.js"
