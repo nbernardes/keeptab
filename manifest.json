@@ -3,21 +3,44 @@
   "name": "KeepTab",
   "version": "1.0.0",
   "description": "Keeps pinned tabs in place: navigating away opens a new tab, and pinned tabs can't be closed until unpinned.",
-  "permissions": ["storage", "webNavigation", "scripting", "tabs", "sessions"],
-  "host_permissions": ["<all_urls>"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "scripting",
+    "tabs",
+    "sessions"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start",
       "all_frames": false
     }
   ],
   "action": {
     "default_title": "KeepTab",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
   }
 }

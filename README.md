@@ -1,4 +1,4 @@
-# KeepTab
+# <img src="icons/icon-readme.png" alt="" width="32" height="39" align="absmiddle" /> KeepTab
 
 Chrome extension that keeps pinned tabs in place. When you're in a pinned tab
 and go to a new page (search, link, form, address bar), that page opens in a
